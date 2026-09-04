@@ -1,14 +1,21 @@
-# Next-Traks
+# next-traks
 
-[![npm version](https://img.shields.io/npm/v/next-traks.svg)](https://www.npmjs.com/package/next-traks)
-[![npm downloads](https://img.shields.io/npm/dm/next-traks.svg)](https://www.npmjs.com/package/next-traks)
-[![bundle size](https://img.shields.io/bundlephobia/minzip/next-traks)](https://bundlephobia.com/package/next-traks)
+Simple, privacy-friendly analytics for [Next.js](https://nextjs.org) - powered by [Traks](https://traks.dev).
 
-Simple integration for [Next.js](https://nextjs.org) and [Traks](https://traks.dev) privacy-friendly analytics.
+[![npm version](https://img.shields.io/npm/v/next-traks.svg)](https://www.npmjs.com/package/next-traks) [![npm downloads](https://img.shields.io/npm/dm/next-traks.svg)](https://www.npmjs.com/package/next-traks) [![bundle size](https://img.shields.io/bundlephobia/minzip/next-traks)](https://bundlephobia.com/package/next-traks) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Next.js](https://img.shields.io/badge/Next.js-13%2B-black)](https://nextjs.org)
 
-Traks is a self-hosted, cookie-free analytics platform that runs inside your own Cloudflare account.
+> **Shoutout to [Traks](https://traks.dev)** - the self-hosted, cookie-free analytics platform that runs inside your own Cloudflare account. This package is an official-style integration that makes using Traks with Next.js effortless.
 
-Maintained by [Shrinath Nayak](https://snayak.dev).
+## Table of Contents
+
+- [Installation](#installation)
+- [Usage](#usage)
+- [Proxy the tracker script](#proxy-the-tracker-script)
+- [Send custom events](#send-custom-events)
+- [TypeScript custom events](#typescript-custom-events)
+- [Environment variables](#environment-variables)
+- [Developing](#developing)
+- [License](#license)
 
 ## Installation
 
@@ -20,7 +27,7 @@ npm install next-traks
 
 ### Include the tracker script
 
-Wrap your app with `<TraksProvider />` at the top level. Find your site key and collector script URL in your Traks dashboard.
+Wrap your app with `<TraksProvider />` at the top level. Find your site key and collector script URL in your [Traks](https://traks.dev) dashboard.
 
 #### App Router
 
@@ -68,17 +75,17 @@ export default function MyApp({ Component, pageProps }) {
 
 ### `TraksProvider` props
 
-| Name               | Description                                                                                                                       |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| `site`             | **Required.** Your Traks site key, e.g. `pb_xxxxxxxx`.                                                                            |
-| `src`              | The collector script URL, e.g. `https://analytics-collect.your-domain.com/t.js`. Not required when using `withTraksProxy`.        |
-| `hashBasedRouting` | Set to `true` for hash-based routers so `#/route` becomes part of the page path.                                                  |
-| `track404`         | Set to `true` on your 404 template to record broken URLs as a `404` event.                                                        |
-| `enabled`          | Explicitly enable or disable the tracker. Defaults to `true` in production only (checks `NODE_ENV` and `NEXT_PUBLIC_VERCEL_ENV`). |
-| `integrity`        | Optional subresource integrity hash for the tracker script.                                                                       |
-| `scriptProps`      | Optional overrides for the `<script>` element props.                                                                              |
+| Prop               | Type          | Description                                                                                                                       |
+| ------------------ | ------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `site`             | `string`      | **Required.** Your Traks site key, e.g. `pb_xxxxxxxx`.                                                                            |
+| `src`              | `string`      | The collector script URL, e.g. `https://analytics-collect.your-domain.com/t.js`. Not required when using `withTraksProxy`.        |
+| `hashBasedRouting` | `boolean`     | Set to `true` for hash-based routers so `#/route` becomes part of the page path.                                                  |
+| `track404`         | `boolean`     | Set to `true` on your 404 template to record broken URLs as a `404` event.                                                        |
+| `enabled`          | `boolean`     | Explicitly enable or disable the tracker. Defaults to `true` in production only (checks `NODE_ENV` and `NEXT_PUBLIC_VERCEL_ENV`). |
+| `integrity`        | `string`      | Optional subresource integrity hash for the tracker script.                                                                       |
+| `scriptProps`      | `ScriptProps` | Optional overrides for the `<script>` element props.                                                                              |
 
-### Proxy the tracker script
+## Proxy the tracker script
 
 To avoid ad blockers and use first-party URLs, wrap your `next.config.js` with `withTraksProxy`:
 
@@ -130,7 +137,7 @@ module.exports = withTraksProxy({
 })(nextConfig)
 ```
 
-### Send custom events
+## Send custom events
 
 Use the `useTraks` hook to fire custom events from React components. It is a client-only hook, so it must be used inside a client component or page. Calls made before the tracker loads are queued by the inline stub and replayed in order.
 
@@ -154,7 +161,7 @@ You can also pass an optional numeric `value`:
 </button>
 ```
 
-### TypeScript custom events
+## TypeScript custom events
 
 Type your events so only the right payloads are accepted:
 
@@ -204,3 +211,7 @@ Requires Node.js 18.17 or later.
 ## License
 
 MIT
+
+---
+
+Maintained by [Shrinath Nayak](https://snayak.dev). Built for [Traks](https://traks.dev).
