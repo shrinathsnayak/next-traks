@@ -71,7 +71,35 @@ test('respects basePath', async () => {
     },
     {
       basePath: false,
-      source: '/blog/api/event',
+      source: '/api/event',
+      destination: 'https://analytics-collect.example.com/api/event',
+    },
+  ])
+
+  expect(config.env).toEqual({
+    NEXT_TRAKS_PROXY: 'true',
+    NEXT_TRAKS_SCRIPT_PATH: '/blog/t.js',
+    NEXT_TRAKS_API_PATH: '/api/event',
+  })
+})
+
+test('keeps event rewrite at /api/event when basePath and scriptPath are both set', async () => {
+  const config = withTraksProxy({
+    src: 'https://analytics-collect.example.com/t.js',
+    scriptPath: '/js/script.js',
+  })({ basePath: '/docs' })
+
+  const rewrites = await config.rewrites?.()
+
+  expect(rewrites).toEqual([
+    {
+      basePath: false,
+      source: '/docs/js/script.js',
+      destination: 'https://analytics-collect.example.com/t.js',
+    },
+    {
+      basePath: false,
+      source: '/api/event',
       destination: 'https://analytics-collect.example.com/api/event',
     },
   ])
@@ -218,7 +246,7 @@ test('accepts a config subtype without casting', async () => {
     },
     {
       basePath: false,
-      source: '/blog/api/event',
+      source: '/api/event',
       destination: 'https://analytics-collect.example.com/api/event',
     },
   ])
