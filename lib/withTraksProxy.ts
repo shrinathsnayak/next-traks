@@ -21,7 +21,10 @@ export default function withTraksProxy(options: WithTraksProxyOptions) {
   return <T extends NextConfig>(nextConfig: T): NextConfig => {
     const scriptPath =
       (nextConfig.basePath ?? '') + (options.scriptPath ?? '/t.js')
-    const apiPath = (nextConfig.basePath ?? '') + '/api/event'
+    // The tracker always POSTs to `{scriptOrigin}/api/event`. Script origin is
+    // the site's host, not the Next.js basePath, so this rewrite must stay at
+    // the domain root even when the app is served under a basePath.
+    const apiPath = '/api/event'
 
     if (!scriptPath.startsWith('/')) {
       throw new Error(
