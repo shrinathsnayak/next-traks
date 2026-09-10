@@ -11,6 +11,7 @@ Simple, privacy-friendly analytics for [Next.js](https://nextjs.org) - powered b
 - [Installation](#installation)
 - [Agent setup (copy-paste)](#agent-setup-copy-paste)
 - [Usage](#usage)
+- [First-party via Cloudflare Worker routes](#first-party-via-cloudflare-worker-routes)
 - [Proxy the tracker script](#proxy-the-tracker-script)
 - [Send custom events](#send-custom-events)
 - [TypeScript custom events](#typescript-custom-events)
@@ -163,9 +164,46 @@ export default function MyApp({ Component, pageProps }) {
 | `integrity`        | `string`      | Optional subresource integrity hash for the tracker script.                                                                       |
 | `scriptProps`      | `ScriptProps` | Optional overrides for the `<script>` element props.                                                                              |
 
+## First-party via Cloudflare Worker routes
+
+If the site’s DNS is on Cloudflare, the most durable first-party setup is to route `/t.js` and `/api/event` on that zone straight to the Traks collect Worker. That avoids a Next.js hop entirely and sidesteps Cloudflare **Error 1000** in the case where a Next rewrite to `*.workers.dev` forwards Cloudflare headers.
+
+### When Next → `workers.dev` breaks (Error 1000)
+
+Error 1000 can happen when a request hits Cloudflare (including `*.workers.dev`) with `CF-Connecting-IP` / `CF-Ray`. That check runs at the edge **before** your Worker — there is no collect-Worker setting to turn it off.
+
+This usually shows up when the **Next.js app is also behind Cloudflare** (or otherwise forwards those headers) and `withTraksProxy` rewrites to a `*.workers.dev` collector. It does **not** always fail: if Next runs on a host that does not send those headers on the rewrite (e.g. many Vercel / Railway setups), `withTraksProxy` pointing at `*.workers.dev` can work fine.
+
+If you hit Error 1000, do not try to make `workers.dev` accept proxied CF headers — use Worker routes on the site zone instead (below).
+
+### Setup (per site zone)
+
+1. In Cloudflare → your site zone (e.g. `cloudflare-experiments.com`) → **Workers Routes**, add:
+
+   | Route                                   | Worker                    |
+   | --------------------------------------- | ------------------------- |
+   | `cloudflare-experiments.com/t.js`       | your Traks collect Worker |
+   | `cloudflare-experiments.com/api/event*` | same Worker               |
+
+2. In the app, point the provider at the same-origin script — **no** `withTraksProxy` / Next rewrites:
+
+```tsx
+<TraksProvider site="pb_xxxxxxxx" src="/t.js">
+  {children}
+</TraksProvider>
+```
+
+Flow: browser → Cloudflare → Traks Worker (same hostname). No app-server hop, no CF header loop, still first-party.
+
+For each new website on Cloudflare, add those two routes on that zone (or automate with Wrangler / Terraform). No repeated Next.js Route Handlers.
+
+**Requirement:** the collect Worker must respond correctly when `Host` is the customer domain. Most Traks-style workers already do if they key off path + site id, not `workers.dev`.
+
 ## Proxy the tracker script
 
-To avoid ad blockers and use first-party URLs, wrap your Next.js config with `withTraksProxy`.
+To avoid ad blockers and use first-party URLs, wrap your Next.js config with `withTraksProxy`. This is the usual approach when the site is not on Cloudflare, or when a Next rewrite to your collector already works in your hosting setup.
+
+> **Error 1000 / Cloudflare:** If the Next app is behind Cloudflare and the collector is `*.workers.dev`, the rewrite may return Error 1000. Prefer [Worker routes on the site zone](#first-party-via-cloudflare-worker-routes), or a collector hostname that is not subject to that CF-to-CF check. If your current `withTraksProxy` → `workers.dev` setup already works, you can keep it.
 
 ### Recommended: `next-traks/proxy`
 
@@ -261,7 +299,7 @@ const nextConfig = withPWA({
 })
 
 export default withTraksProxy({
-  src: 'https://traks-collect.abhijeetnayak99.workers.dev/t.js',
+  src: 'https://analytics-collect.your-domain.com/t.js',
 })(nextConfig)
 ```
 
