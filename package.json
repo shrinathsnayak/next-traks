@@ -1,6 +1,6 @@
 {
   "name": "next-traks",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Simple integration for Next.js and Traks privacy-friendly analytics",
   "files": [
     "dist"

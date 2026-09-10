@@ -1,4 +1,4 @@
-import { NextConfig } from 'next'
+import type { NextConfig } from 'next'
 import type { Rewrite, WithTraksProxyOptions } from './types'
 import { ENV_PROXY, ENV_SCRIPT_PATH, ENV_API_PATH } from './constants'
 
@@ -18,7 +18,10 @@ export default function withTraksProxy(options: WithTraksProxyOptions) {
     )
   }
 
-  return <T extends NextConfig>(nextConfig: T): NextConfig => {
+  // Preserve the input config type (T) instead of returning a separately
+  // resolved NextConfig. That avoids consumer casts when composing with other
+  // wrappers (e.g. withPWA) and portable-declaration issues in next.config.ts.
+  return <T extends NextConfig>(nextConfig: T): T => {
     const scriptPath =
       (nextConfig.basePath ?? '') + (options.scriptPath ?? '/t.js')
     // The tracker always POSTs to `{scriptOrigin}/api/event`. Script origin is
@@ -93,6 +96,6 @@ export default function withTraksProxy(options: WithTraksProxyOptions) {
           afterFiles: [...(userRewrites.afterFiles ?? []), ...traksRewrites],
         }
       },
-    }
+    } as T
   }
 }

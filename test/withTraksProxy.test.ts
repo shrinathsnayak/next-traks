@@ -1,6 +1,8 @@
 import type { NextConfig } from 'next'
 import withTraksProxy from '../lib/withTraksProxy'
 
+const emptyConfig: NextConfig = {}
+
 afterEach(() => {
   delete process.env.NEXT_TRAKS_SCRIPT_PATH
   delete process.env.NEXT_TRAKS_API_PATH
@@ -10,7 +12,7 @@ afterEach(() => {
 test('adds rewrites and env vars with defaults', async () => {
   const config = withTraksProxy({
     src: 'https://analytics-collect.example.com/t.js',
-  })({})
+  })(emptyConfig)
 
   const rewrites = await config.rewrites?.()
 
@@ -38,7 +40,7 @@ test('respects custom scriptPath', async () => {
   const config = withTraksProxy({
     src: 'https://analytics-collect.example.com/t.js',
     scriptPath: '/js/script.js',
-  })({})
+  })(emptyConfig)
 
   const rewrites = await config.rewrites?.()
 
@@ -57,9 +59,10 @@ test('respects custom scriptPath', async () => {
 })
 
 test('respects basePath', async () => {
+  const input: NextConfig = { basePath: '/blog' }
   const config = withTraksProxy({
     src: 'https://analytics-collect.example.com/t.js',
-  })({ basePath: '/blog' })
+  })(input)
 
   const rewrites = await config.rewrites?.()
 
@@ -84,10 +87,11 @@ test('respects basePath', async () => {
 })
 
 test('keeps event rewrite at /api/event when basePath and scriptPath are both set', async () => {
+  const input: NextConfig = { basePath: '/docs' }
   const config = withTraksProxy({
     src: 'https://analytics-collect.example.com/t.js',
     scriptPath: '/js/script.js',
-  })({ basePath: '/docs' })
+  })(input)
 
   const rewrites = await config.rewrites?.()
 
@@ -106,13 +110,14 @@ test('keeps event rewrite at /api/event when basePath and scriptPath are both se
 })
 
 test('preserves existing rewrites as arrays', async () => {
-  const config = withTraksProxy({
-    src: 'https://analytics-collect.example.com/t.js',
-  })({
+  const input: NextConfig = {
     rewrites: async () => [
       { source: '/existing', destination: 'https://example.com/existing' },
     ],
-  })
+  }
+  const config = withTraksProxy({
+    src: 'https://analytics-collect.example.com/t.js',
+  })(input)
 
   const rewrites = await config.rewrites?.()
 
@@ -132,15 +137,16 @@ test('preserves existing rewrites as arrays', async () => {
 })
 
 test('preserves existing rewrites as objects', async () => {
-  const config = withTraksProxy({
-    src: 'https://analytics-collect.example.com/t.js',
-  })({
+  const input: NextConfig = {
     rewrites: async () => ({
       beforeFiles: [
         { source: '/before', destination: 'https://example.com/before' },
       ],
     }),
-  })
+  }
+  const config = withTraksProxy({
+    src: 'https://analytics-collect.example.com/t.js',
+  })(input)
 
   const rewrites = await config.rewrites?.()
 
@@ -170,11 +176,12 @@ test('does not mutate the original rewrites object', async () => {
     ],
   })
 
+  const input: NextConfig = {
+    rewrites: userRewrites,
+  }
   const config = withTraksProxy({
     src: 'https://analytics-collect.example.com/t.js',
-  })({
-    rewrites: userRewrites,
-  })
+  })(input)
 
   await config.rewrites?.()
   const rewrites = await config.rewrites?.()
@@ -199,13 +206,15 @@ test('does not mutate the original rewrites object', async () => {
 })
 
 test('throws when src is missing', () => {
-  expect(() => withTraksProxy({} as unknown as { src: string })({})).toThrow(
+  expect(() =>
+    withTraksProxy({} as unknown as { src: string })(emptyConfig)
+  ).toThrow(
     "next-traks: withTraksProxy requires a src option, e.g. 'https://analytics-collect.your-domain.com/t.js'"
   )
 })
 
 test('throws when src is not a valid URL', () => {
-  expect(() => withTraksProxy({ src: 'not a url' })({})).toThrow(
+  expect(() => withTraksProxy({ src: 'not a url' })(emptyConfig)).toThrow(
     'next-traks: withTraksProxy src is not a valid URL: not a url'
   )
 })
@@ -215,13 +224,13 @@ test('throws when scriptPath does not start with /', () => {
     withTraksProxy({
       src: 'https://analytics-collect.example.com/t.js',
       scriptPath: 'js/script.js',
-    })({})
+    })(emptyConfig)
   ).toThrow(
     'next-traks: scriptPath must start with "/". Received: js/script.js'
   )
 })
 
-test('accepts a config subtype without casting', async () => {
+test('preserves config subtype without casting', async () => {
   interface PWAConfig extends NextConfig {
     pwa?: { dest?: string }
   }
@@ -231,7 +240,7 @@ test('accepts a config subtype without casting', async () => {
     pwa: { dest: 'public' },
   }
 
-  // Passing a config that extends NextConfig should not require `as any` or `as NextConfig`.
+  // Input and output should keep PWAConfig — no `as never` / `as NextConfig`.
   const config = withTraksProxy({
     src: 'https://analytics-collect.example.com/t.js',
   })(pwaConfig)
@@ -251,5 +260,5 @@ test('accepts a config subtype without casting', async () => {
     },
   ])
 
-  expect((config as PWAConfig).pwa).toEqual({ dest: 'public' })
+  expect(config.pwa).toEqual({ dest: 'public' })
 })
