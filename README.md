@@ -9,6 +9,7 @@ Simple, privacy-friendly analytics for [Next.js](https://nextjs.org) - powered b
 ## Table of Contents
 
 - [Installation](#installation)
+- [Agent setup (copy-paste)](#agent-setup-copy-paste)
 - [Usage](#usage)
 - [Proxy the tracker script](#proxy-the-tracker-script)
 - [Send custom events](#send-custom-events)
@@ -22,6 +23,83 @@ Simple, privacy-friendly analytics for [Next.js](https://nextjs.org) - powered b
 ```bash
 npm install next-traks
 ```
+
+## Agent setup (copy-paste)
+
+Paste the block below into Cursor, Claude Code, Copilot Chat, or any coding agent. Fill in your Traks values first (from the [Traks](https://traks.dev) dashboard).
+
+````md
+Set up next-traks with first-party proxying in this Next.js app.
+
+Package: https://www.npmjs.com/package/next-traks
+Docs: https://github.com/shrinathsnayak/next-traks
+
+Values (replace if still placeholders):
+
+- SITE_KEY: pb_xxxxxxxx
+- COLLECTOR_SRC: https://analytics-collect.your-domain.com/t.js
+
+Do all of the following:
+
+1. Install the package:
+   npm install next-traks
+   (or pnpm / yarn / bun equivalent)
+   Use a recent version that exports "next-traks/proxy" (1.0.2+).
+
+2. Wire the Next.js config with the Node-safe proxy entry.
+   - Prefer editing existing next.config.mjs, next.config.ts, or next.config.js.
+   - For new or ESM configs: MUST import from "next-traks/proxy" (not from "next-traks").
+     Importing withTraksProxy from "next-traks" in next.config.mjs/ts fails because the
+     main ESM bundle loads react and next/script.
+   - Backward compatible: existing CommonJS next.config.js that uses
+     require("next-traks") can stay as-is. Prefer migrating to "next-traks/proxy".
+   - Wrap the exported config with withTraksProxy({ src: COLLECTOR_SRC }).
+   - Preserve any existing config options and other wrappers (compose them).
+
+   ESM example (next.config.mjs / next.config.ts):
+
+   ```js
+   import { withTraksProxy } from 'next-traks/proxy'
+
+   export default withTraksProxy({
+     src: 'COLLECTOR_SRC',
+   })({
+     // existing next config
+   })
+   ```
+
+   CommonJS example (next.config.js):
+
+   ```js
+   const { withTraksProxy } = require('next-traks/proxy')
+
+   module.exports = withTraksProxy({
+     src: 'COLLECTOR_SRC',
+   })({
+     // existing next config
+   })
+   ```
+
+3. Mount TraksProvider at the app root.
+   - App Router: wrap children in app/layout.tsx (or the root layout).
+   - Pages Router: wrap the page in pages/_app.tsx.
+   - Because the proxy is enabled, do NOT pass `src` to TraksProvider.
+   - Pass site={SITE_KEY} only.
+
+   ```tsx
+   import TraksProvider from 'next-traks'
+
+   ;<TraksProvider site="SITE_KEY">{children}</TraksProvider>
+   ```
+
+4. Do not add createRequire / dynamic import workarounds. Use next-traks/proxy.
+
+5. Optionally show a one-line custom event example with useTraks from "next-traks" in a client component.
+
+6. Summarize the files you changed.
+````
+
+After the agent finishes, restart the Next.js dev server so config rewrites take effect.
 
 ## Usage
 
@@ -87,11 +165,46 @@ export default function MyApp({ Component, pageProps }) {
 
 ## Proxy the tracker script
 
-To avoid ad blockers and use first-party URLs, wrap your `next.config.js` with `withTraksProxy`:
+To avoid ad blockers and use first-party URLs, wrap your Next.js config with `withTraksProxy`.
+
+### Recommended: `next-traks/proxy`
+
+Import from **`next-traks/proxy`** in config files. That subpath has no React or `next/script` dependencies, so Node can load it when evaluating the config.
+
+Importing `withTraksProxy` from `next-traks` in `next.config.mjs` / `next.config.ts` will fail with `ERR_MODULE_NOT_FOUND` for `next/script`.
+
+#### `next.config.mjs` / `next.config.ts`
+
+```js
+// next.config.mjs
+import { withTraksProxy } from 'next-traks/proxy'
+
+export default withTraksProxy({
+  src: 'https://analytics-collect.your-domain.com/t.js',
+})({
+  // ...your Next.js config, even if empty
+})
+```
+
+```ts
+// next.config.ts
+import type { NextConfig } from 'next'
+import { withTraksProxy } from 'next-traks/proxy'
+
+const nextConfig: NextConfig = {
+  // ...
+}
+
+export default withTraksProxy({
+  src: 'https://analytics-collect.your-domain.com/t.js',
+})(nextConfig)
+```
+
+#### `next.config.js` (CommonJS)
 
 ```js
 // next.config.js
-const { withTraksProxy } = require('next-traks')
+const { withTraksProxy } = require('next-traks/proxy')
 
 module.exports = withTraksProxy({
   src: 'https://analytics-collect.your-domain.com/t.js',
@@ -99,6 +212,21 @@ module.exports = withTraksProxy({
   // ...your Next.js config, even if empty
 })
 ```
+
+### Backward compatibility
+
+`withTraksProxy` remains exported from the main `next-traks` entry. Existing CommonJS configs that use `require('next-traks')` keep working — no migration required:
+
+```js
+// next.config.js — still supported
+const { withTraksProxy } = require('next-traks')
+
+module.exports = withTraksProxy({
+  src: 'https://analytics-collect.your-domain.com/t.js',
+})({})
+```
+
+Prefer `next-traks/proxy` for new setups and for any ESM config (`next.config.mjs` / `next.config.ts`). The main package entry is still the right place to import `TraksProvider` and `useTraks` in app code.
 
 When the proxy is active, `src` is not required on `TraksProvider`:
 
@@ -109,9 +237,9 @@ When the proxy is active, `src` is not required on `TraksProvider`:
 By default the script is served from `/t.js` and the event API from `/api/event`. You can override the script path:
 
 ```js
-const { withTraksProxy } = require('next-traks')
+import { withTraksProxy } from 'next-traks/proxy'
 
-module.exports = withTraksProxy({
+export default withTraksProxy({
   src: 'https://analytics-collect.your-domain.com/t.js',
   scriptPath: '/js/script.js',
 })({
@@ -124,15 +252,15 @@ module.exports = withTraksProxy({
 `withTraksProxy` accepts any config that extends `NextConfig`, so it works alongside other wrappers without casting:
 
 ```js
-// next.config.js
-const { withTraksProxy } = require('next-traks')
-const withPWA = require('@ducanh2912/next-pwa').default
+// next.config.mjs
+import { withTraksProxy } from 'next-traks/proxy'
+import withPWA from '@ducanh2912/next-pwa'
 
 const nextConfig = withPWA({
   dest: 'public',
 })
 
-module.exports = withTraksProxy({
+export default withTraksProxy({
   src: 'https://traks-collect.abhijeetnayak99.workers.dev/t.js',
 })(nextConfig)
 ```

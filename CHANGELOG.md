@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-09-10
+
+### Fixed
+
+- Added a React-free `next-traks/proxy` entry for `next.config.mjs` / `next.config.ts`. Importing `withTraksProxy` from the main package previously evaluated `react` and `next/script`, which Node's ESM loader cannot resolve (`ERR_MODULE_NOT_FOUND` for `next/script`). Use `import { withTraksProxy } from 'next-traks/proxy'` in ESM configs.
+
+### Backward compatibility
+
+- The main entry still re-exports `withTraksProxy`. Existing `require('next-traks')` in CommonJS `next.config.js` continues to work with no changes.
+- `TraksProvider` and `useTraks` imports from `next-traks` are unchanged.
+
 ## [1.0.1] - 2026-09-10
 
 ### Fixed
@@ -23,6 +34,7 @@ All notable changes to this project will be documented in this file.
 - ESM and CommonJS builds with TypeScript declarations.
 - Jest test suite and GitHub Actions CI/CD workflows for lint, build, test, and npm publish with provenance.
 
-[Unreleased]: https://github.com/shrinathsnayak/next-traks/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/shrinathsnayak/next-traks/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/shrinathsnayak/next-traks/releases/tag/v1.0.2
 [1.0.1]: https://github.com/shrinathsnayak/next-traks/releases/tag/v1.0.1
 [1.0.0]: https://github.com/shrinathsnayak/next-traks/releases/tag/v1.0.0

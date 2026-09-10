@@ -13,6 +13,6 @@
     "sourceMap": true,
     "skipLibCheck": true
   },
-  "include": ["index.ts", "lib/**/*"],
+  "include": ["index.ts", "proxy.ts", "lib/**/*"],
   "exclude": ["node_modules", "dist", "test"]
 }

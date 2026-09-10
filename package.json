@@ -1,6 +1,6 @@
 {
   "name": "next-traks",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Simple integration for Next.js and Traks privacy-friendly analytics",
   "files": [
     "dist"
@@ -18,6 +18,16 @@
       "require": {
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
+      }
+    },
+    "./proxy": {
+      "import": {
+        "types": "./dist/proxy.d.ts",
+        "default": "./dist/proxy.esm.js"
+      },
+      "require": {
+        "types": "./dist/proxy.d.ts",
+        "default": "./dist/proxy.js"
       }
     }
   },
